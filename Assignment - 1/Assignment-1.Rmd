@@ -1,1 +1,53 @@
+---
+title: "Assignment - 1"
+output: html_document
+date: "2022-09-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Import Dataset
+
+
+```{r}
+options(stringsAsFactors = FALSE)
+Sales_Data <- read.csv("~/Downloads/Avinash/Avinash/Sales_Data.csv")
+head(Sales_Data)
+```
+
+## Descriptive statistics
+
+```{r}
+library(pastecs)
+stat.desc(Sales_Data[,c("Sales_Rep","Business","Age","Certficates","Salary")])
+```
+
+## Transformation
+```{r}
+library(tidyverse, quietly=TRUE, warn.conflicts=FALSE)
+Arrange_Age <- Sales_Data %>% arrange(Age)
+head(Arrange_Age)
+```
+
+## Quantitative plots
+
+```{r}
+Sales_Rep <- Sales_Data$Sales_Rep
+Business <- Sales_Data$Business
+Age <- Sales_Data$Age
+certficates <- Sales_Data$Certficates
+Salary <- Sales_Data$Salary
+hist(Sales_Rep)
+hist(Age)
+hist(certficates)
+hist(Salary)
+```
+## Scatter plots
+```{r}
+plot(Age,certficates)
+plot(Age,Salary)
+plot(Sales_Rep,Salary)
+```
 
