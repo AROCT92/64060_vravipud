@@ -1,0 +1,7 @@
+Steps to run assignemtn-1.RMD file 
+
+Step-1 : Download the zip folder 
+Step-2 : Instal the  Following packages "pastecs" and "tidyverse"
+Step-3 : Change the dataset file path accordingly
+Step-4 : Run each and every "chunk".Output are seen in the console.
+Step-5 : Run knit using "HTML" or "PDF" to see overall output.
