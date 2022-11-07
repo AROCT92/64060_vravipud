@@ -1,0 +1,132 @@
+---
+title: "Assignment 4 K-means for clustering"
+author: "Avinash Ravipudi"
+date: "2022-11-04"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages("httr")
+#install.packages("readr")
+#install.packages("factoextra")
+#install.packages("flexclust")
+library(httr)
+library(readr)
+library(tidyverse)
+library(factoextra)
+library(ISLR)
+library(flexclust)
+library(caret)
+```
+#Importing Data set 
+```{r}
+#importing Data set and converting 
+getwd()
+pharma<-read.csv("Pharmaceuticals.csv")
+#summarize the Data
+#str(pharma)
+head(pharma,10)
+```
+```{r}
+set.seed(23)
+#Data frame  Z Score scaling
+pharma_scaled <- scale(pharma[,3:11])
+summary(pharma_scaled)
+
+# Data Frame Range Scaling 
+pharma_range <- scale(pharma[,3:11])
+```
+The k-means algorithm was used to divide the 21 enterprises into three groups with no variable weights. We chose k=3 since that is the optimal k indicated by the silhouette approach.
+```{r}
+set.seed(23)
+dst_rows <- get_dist(pharma_scaled)
+fviz_dist(dst_rows) #To visualize distance between matrix rows
+cluster1 <- kmeans(pharma_scaled, centers = 3, nstart = 15) # HEre taking K=3 & nstart=15
+fviz_cluster(cluster1, data = pharma_scaled)
+print(cluster1)
+```
+
+
+```{r}
+fviz_nbclust(pharma_scaled, kmeans, method = "wss") # WSS method (ELBOW METHOOD)
+
+fviz_nbclust(pharma_scaled, kmeans, method = "silhouette") #SILHOUETTE Methood (To find best K value)
+
+```
+I did not use the WSS approach since the graph did not show a distinct elbow and was extremely unclear. The graph does not indicate the elbow/knee position, and it flattens out more than once at k = 4 and 6, respectively, and I chose the silhouette approach since it is apparent to display the ideal cluster K = 5.
+
+```{r}
+#let's look at the mean value from actual data by clusters
+aggregate(pharma[3:11], by=list(cluster=cluster1$cluster), mean) 
+actual_data <- cbind(pharma, cluster = cluster1$cluster)
+tibble(actual_data)
+```
+```{r}
+by(actual_data, factor(actual_data$cluster), summary)#intensive statistical cluster analysis
+```
+Recommendations, Location and Exchange of cluster
+```{r}
+#Cluster median recommendation
+T_Recom <- table(actual_data$cluster, actual_data$Median_Recommendation) 
+names(dimnames(T_Recom)) <- c("Cluster", "Recommendation")
+TR <- addmargins(T_Recom)
+TR
+```
+The data do not show a clear link between clusterMedian Recommendation. There are 21 recommendations in total, with 1 strong buy, 7 moderate buys, 9 holds, and 4 moderate sells.
+```{r}
+#Cluster-based location breakdown
+T_Location <- table(actual_data$cluster, actual_data$Location)
+names(dimnames(T_Location)) <- c("Cluster", "Location")
+Tlocation <- addmargins(T_Location)
+Tlocation
+```
+We cannot deduce any association between cluster Location from the findings. A total of 21 firms are divided into 13 in the United States, three in the United Kingdom, and one each in Canada, France, Germany, Ireland, and Switzerland.
+```{r}
+#Exchange breakdown by cluster
+T_Exchange <- table(actual_data$cluster, actual_data$Exchange)
+names(dimnames(T_Exchange)) <- c("Cluster", "Exchange")
+Texchange <- addmargins(T_Exchange)
+Texchange
+```
+The results show that there is no link between clusterExchange. There are 21 corporations in all, divided into 1 Amex, 1 Nasdaq, and 19 NYSE.
+
+
+Investigating the options
+```{r}
+fviz_nbclust(pharma_range, FUN = kmeans, method = "silhouette")
+fviz_nbclust(pharma_range, kmeans, method = "wss")
+```
+We also perform tests to determine the best k using range normalization. The ideal k is 2 from the silhouette and 6 from the elbow (not clear). We'll stick with z-score normalization data because the k from range normalization isn't as good.`
+```{r}
+set.seed(11)
+cluster2 = kcca(pharma_scaled, k=3, kccaFamily("kmeans"))
+cluster2
+clusters(cluster2) 
+
+#Apply the predict() function
+clusters_index <- predict(cluster2)
+image(cluster2)
+points(pharma_scaled, col=clusters_index, pch=17, cex=1.0)
+```
+To run kmeans cluster on k =3, we use the kcca algorithm instead of kmeans from basic R.
+
+```{r}
+set.seed(11)
+cluster2 = kcca(pharma_scaled, k=3, kccaFamily("kmedians"))
+cluster2
+clusters(cluster2) 
+
+#Apply the predict() function
+clusters_index <- predict(cluster2)
+image(cluster2)
+points(pharma_scaled, col=clusters_index, pch=16, cex=1.0)
+```
+
+
