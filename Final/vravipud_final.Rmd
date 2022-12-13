@@ -1,0 +1,310 @@
+---
+title: "FML (MIS 64060-001) - Final Exam"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  html_notebook: default
+---
+<br>
+<br>
+<h5><u><b>Executive Summary:</b></u></h5>
+
+Analyzing the “fuel receipts costs EIA923” dataset in R programming using K-means clustering to separate the data and offer the best insights and ideas about electricity generation in the US.By applying ‘ELBOW method and ‘SILHOETTE’ method to find the best optimal ‘K’ value we found it to be K=7 and ploted the graphs by analysing each cluster
+
+
+<h5><u><b>Problem:</b></u></h5>
+
+When fossil fuels (coal, gas, and petroleum products) are used to make energy, they emit harmful full fumes and other greenhouse gasses into the atmosphere, triggering air quality and global warming. It can cause premature death, cardiac arrest, migraines, pulmonary problems, asthma, and a range of other disorders.
+
+The review analyzes the information and explores numerous choices to minimize the damage and to avoid or take the necessary precaution regarding the fossil resources used for electricity generation.
+
+<h5><u><b>Technique:</b></u></h5>
+
+The analysis employs the K-means clustering method, that enables for the quick analysis of large data frames even while assuring convergence and the ability to warm-start the locations of centroids. Where K-means is an unsupervised machine learning approach used for clusters, we conduct on the training dataset to identify the number of clusters to participate in segmentation. I'm utilizing "ELBOW" method and "silhouette" method from the results to determine the best optimum k. The main principle underlying k-means is to identify k clusters with the least amount of within-cluster variance (or error).
+
+<h5><u><b>Conclusion:</b></u></h5>
+* Cluser K2 produces the finest outcomes.
+* Coal consumption is decreasing , fuel and gas consumption increasing.
+* The higher the heat content of the fuel, the lower the price of the fuel per mmbtu. It was discovered that the content of sulphur, mercury, ash, and fuel is negatively related.
+
+
+
+<h5><u><b>Appendix:</b></u></h5>
+<center><h3><b>K-means Cluster Analysis</b></h3></center>
+
+<br>
+<br>
+
+<h5><u><b>Replication Requirements</b></u></h5>
+* Need to load the following packages:
+```{r}
+library(tidyverse)  # data manipulation
+library(cluster)    # clustering algorithms
+library(factoextra) # clustering algorithms & visualization
+library(corrplot)#visualizing correlation matrices and confidence intervals
+library(httr) #Configuration functions
+library(readr) #Read the data 
+library(ISLR) #collection of data-sets 
+library(caret) #consistent syntax for data preparation, model building, and model evaluation
+```
+<h5><u><b>Data Preparation</b></u></h5>
+* To perform a cluster analysis in R, generally, the data should be prepared as follows:
+    + Importing the dataframe "fuel_receipts_costs_eia923.csv"
+    + Checking is NA values  exist or not
+    + Replacing NA values with median
+    + Considering 2% of data
+    + Considering Numeric data column for the analysis
+    + Setting seed at 7707 & spliting the data into 75% traing data and 25% as test data
+
+```{r}
+#set seed values as 
+set.seed(7077)
+
+#importing Data set and converting 
+getwd()
+FRC<-read.csv("fuel_receipts_costs_eia923.csv")
+
+#check any NA values in the data set
+sum(is.na(FRC)) # NA values in data set
+
+#Replace NA values with median 
+FRC_NO_NA<-FRC %>% replace(is.na(.), 0)
+df <- FRC_NO_NA %>% mutate(across(where(is.numeric), ~replace_na(., median(., na.rm=TRUE))))
+
+#Considering 2%  of data for analysis
+df<-df %>% sample_frac(0.02)
+
+#considering particular columns for my analysis
+df<-df[, c(15:20)] # By index
+
+#use 75%  of dataset as training set and 25%  as test set
+Sample_data <- sample(c(TRUE, FALSE), nrow(df), replace=TRUE, prob=c(0.75,0.25))
+# Train Data
+df  <- df[Sample_data, ] # 75% Train Data
+
+#Test Data
+test   <- df[!Sample_data, ] # 25% test Dat
+
+head(df,10)
+```
+<h5><u><b>Z SCORE</b></u></h5>
+```{r}
+set.seed(7707)
+#Data frame  Z Score scaling
+df_scaled <- scale(df) 
+summary(df_scaled)
+
+# Data Frame Range Scaling 
+df_range <- scale(df)
+```
+<h5><u><b>Co-Relation</b></u></h5>
+```{r}
+#set seed value at 77077
+set.seed(7707)
+#finding distance of matrix
+corrplot(cor(df_scaled),
+         method = "circle",       
+         order = "hclust",         # Ordering method of the matrix
+         hclust.method = "ward.D", # If order = "hclust", is the cluster method to be used
+         addrect = 2,              # If order = "hclust", number of cluster rectangles
+         rect.col = 3,             # Color of the rectangles
+         rect.lwd = 3)             # Line width of the rectangles
+```
+<h5><u><b>K Means</b></u></h5>
+```{r}
+#set seed value at 77077
+set.seed(7707)
+k2 <- kmeans(df_scaled, centers = 2, nstart = 25)
+str(k2)
+#print(k2)
+#visulize cluser 
+fviz_cluster(k2, data = df_scaled)
+```
+```{r}
+#set seed value at 77077
+set.seed(7707)
+k3 <- kmeans(df_scaled, centers = 3, nstart = 25)
+k4 <- kmeans(df_scaled, centers = 4, nstart = 25)
+k5 <- kmeans(df_scaled, centers = 5, nstart = 25)
+
+# plots to compare
+p1 <- fviz_cluster(k2, geom = "point", data = df_scaled) + ggtitle("k = 2")
+p2 <- fviz_cluster(k3, geom = "point",  data = df_scaled) + ggtitle("k = 3")
+p3 <- fviz_cluster(k4, geom = "point",  data = df_scaled) + ggtitle("k = 4")
+p4 <- fviz_cluster(k5, geom = "point",  data = df_scaled) + ggtitle("k = 5")
+
+library(gridExtra)
+grid.arrange(p1, p2, p3, p4, nrow = 2)
+```
+<h5><u><b>Best Optimal K </b></u></h5><br>
+
+* <h5><u><b>ELBOW METHOOD </b></u></h5>
+
+```{r}
+set.seed(7077)
+
+# function to compute total within-cluster sum of square 
+wss <- function(k) {
+  kmeans(df_scaled, k, nstart = 15 )$tot.withinss
+}
+
+# Compute and plot wss for k = 1 to k = 15
+k.values <- 1:15
+
+# extract wss for 2-15 clusters
+wss_values <- map_dbl(k.values, wss)
+
+plot(k.values, wss_values,
+       type="b", pch = 19, frame = FALSE, 
+       xlab="Number of clusters K",
+       ylab="Total within-clusters sum of squares")
+#wrapped up in a single function
+fviz_nbclust(df_scaled, kmeans, method = "wss")
+```
+* <h5><u><b>Silhouette Method</b></u></h5>
+```{r}
+set.seed(7077)
+# function to compute average silhouette for k clusters
+avg_sil <- function(k) {
+  km.res <- kmeans(df_scaled, centers = k, nstart = 25)
+  ss <- silhouette(km.res$cluster, dist(df_scaled))
+  mean(ss[, 3])
+}
+
+# Compute and plot wss for k = 2 to k = 15
+k.values <- 2:15
+
+# extract avg silhouette for 2-15 clusters
+avg_sil_values <- map_dbl(k.values, avg_sil)
+
+plot(k.values, avg_sil_values,
+       type = "b", pch = 19, frame = FALSE, 
+       xlab = "Number of clusters K",
+       ylab = "Average Silhouettes")
+#wrapped up in a single function 
+fviz_nbclust(df_scaled, kmeans, method = "silhouette")
+
+```
+<h5><u><b>Extracting Results</b></u></h5>
+I did not use the WSS method since the graph did not show a definite elbow and was very unclear. The graph does not show the elbow/knee position, and it flattens out more than once at k =2,7 & 9, respectively, and I picked the silhouette technique since it is obvious to show the optimal cluster K = 5. As a result, the cluster was plotted with K=5 at the end.
+```{r}
+# Compute k-means clustering with k = 5
+set.seed(7707)
+final <- kmeans(df_scaled, 5, nstart = 25)
+#print(final)
+#We can visualize the results using fviz_cluster:
+fviz_cluster(final, data = df_scaled)
+```
+we can extract the clusters and add to our initial data to do some descriptive statistics at the cluster level:
+```{r}
+df %>%
+  mutate(Cluster = final$cluster) %>%
+  group_by(Cluster) %>%
+  summarise_all("mean")
+```
+
+
+
+
+
+
+Extra Credit
+● Use multiple-linear regression to determine the best set of variables to predict fuel_cost_per_mmbtu. 
+○ Check its prediction on the test set
+
+
+```{r}
+test<-test
+
+
+#check any NA values in the data set
+sum(is.na(test)) # NA values in data set
+
+#Replace NA values with median 
+FRC_NO_NA<-test %>% replace(is.na(.), 0)
+test <- FRC_NO_NA %>% mutate(across(where(is.numeric), ~replace_na(., median(., na.rm=TRUE))))
+
+
+head(test)
+count(test)
+```
+
+```{r}
+#test<-scale(test)
+head(test)
+```
+
+
+```{r}
+model <- lm(fuel_cost_per_mmbtu ~ fuel_received_units + fuel_mmbtu_per_unit + sulfur_content_pct + ash_content_pct +  mercury_content_ppm , data = test)
+summary(model)
+```
+
+
+```{r}
+model  <- lm(fuel_cost_per_mmbtu ~ fuel_received_units + fuel_mmbtu_per_unit + sulfur_content_pct + ash_content_pct +  mercury_content_ppm , data = test)
+summary(model)
+confint(model)
+```
+```{r}
+sigma(model)/mean(test$fuel_cost_per_mmbtu)
+```
+
+```{r}
+#test = scale(test)
+# Make predictions
+predictions <- model %>% predict(test)
+# Model performance
+# (a) Compute the prediction error, RMSE
+RMSE(predictions, test$fuel_cost_per_mmbtu)
+```
+
+```{r}
+# (b) Compute R-square
+R2(predictions, test$fuel_cost_per_mmbtu)
+```
+
+
+● Append your data with the cluster information.
+           ○ Predict the cluster for the test sample
+           ○ Rerun the regression model with the chosen variables + cluster information. Check the
+prediction on the test set
+
+```{r}
+df %>%
+  mutate(Cluster = final$cluster) %>%
+  group_by(Cluster) %>%
+  summarise_all("mean")
+```
+```{r}
+#predict(model,data.frame(test))
+#Predictions on the test set
+predictTest = predict(model, newdata = test, type = "response")
+summary(predictTest,10)
+
+```
+
+```{r}
+model  <- lm(fuel_cost_per_mmbtu ~ fuel_received_units + fuel_mmbtu_per_unit + sulfur_content_pct + ash_content_pct  ,Cluster = final$cluster, data = test)
+summary(model)
+confint(model)
+```
+```{r}
+#predict(model,data.frame(test))
+#Predictions on the test set
+predictTest = predict(model, newdata = test, type = "response")
+summary(predictTest,10)
+```
+*3. Did adding cluster information improve your prediction?
+    + Hence, Prediction has improved with the addition of cluster information, as evidenced by the correlation value.
+
+
+
+
+<h5><u><b>References:</b></u></h5>
+
+* https://uc-r.github.io/kmeans_clustering
+* https://www.datanovia.com/en/lessons/k-means-clustering-in-r-algorith-and-practical-examples/
+* https://www.geeksforgeeks.org/k-means-clustering-in-r-programming/
+* https://www.statology.org/k-means-clustering-in-r/
